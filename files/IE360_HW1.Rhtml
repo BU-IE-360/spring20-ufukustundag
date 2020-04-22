@@ -1,0 +1,152 @@
+<html>
+
+<head>
+<title>IE360 - Homework 1: Analysis of 5 different sectors in GDP</title>
+</head>
+
+<body>
+
+<p>IE360 - Homework 1: Analysis of 5 different sectors in GDP</p>
+
+<p>Introduction: The aim of this research is to analyze and compare the contribution of 5 important sectors (agriculture, industry, manufacturing, construction, services) to the GDP of Turkey between 2000 and 2020 and also to seek a relationship between these contributions and USD/TL ratio. For this purpose, the general trend of contribution to the GDP is going to be visualized for each specific sector and the seasonality effect in each sector will be questioned as well as the impact of currency.</p>
+
+<!--begin.rcode
+#install and load useful packages
+install.packages("readxl")
+install.packages("xts")
+library(xts)
+library(readxl)
+library(data.table)
+
+#insert data
+data_path = 'C:/Users/ufuk9/Desktop/IE360 HW1 EVDS data.xlsx'
+data = read_excel(data_path, sheet = 'EVDS', n_max = 82)
+data = data.table(data)
+
+head(data)
+tail(data)
+str(data)
+
+#edit column names
+newnames <- c("Date", "USD/TL", "Agriculture", "Industry", "Manufacturing", "Construction", "Services")
+setnames(data, names(data), newnames)
+str(data)
+
+#adding percentage columns for each sector
+sum_sectors <- rowSums(data[,3:7])
+data <- cbind(data, sum_sectors)
+
+percent_agr <- data[,3] / data[,8]
+data <- cbind(data, percent_agr)  
+
+percent_ind <- data[,4] / data[,8]
+data <- cbind(data, percent_ind)
+
+percent_man <- data[,5] / data[,8]
+data <- cbind(data, percent_man)
+
+percent_con <- data[,6] / data[,8]
+data <- cbind(data, percent_con)
+
+percent_ser <- data[,7] / data[,8]
+data <- cbind(data, percent_ser)
+
+head(data)
+str(data)
+
+newnames2 <- c("Date", "USD/TL", "Agriculture", "Industry", "Manufacturing", "Construction", "Services", "Sum", 
+               "%agriculture", "%industry", "%manufacturing", "%construction", "%service")
+names(data) <- newnames2
+
+#plotting to see general trends
+plot(data$`%agriculture`)
+plot(data$`%industry`)
+plot(data$`%manufacturing`)
+plot(data$`%construction`)
+plot(data$`%service`)  
+plot(data$`USD/TL`)
+
+#detection of the quarters at which the specific sector increases its contribution to GDP and finding frequencies for seasonality comment
+#seeking of possible relations with currency
+high_agriculture <- which(data$`%agriculture` > 0.015)
+high_agriculture_table <- data[high_agriculture,c(1,9)]
+high_agriculture_table[,"USD/TL" := data$`USD/TL`[high_agriculture]]
+high_agriculture_table[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+high_agriculture_table[,Date := NULL]
+high_agriculture_table
+quarter_freq_agr <- c(length(which(high_agriculture_table$Quarter == "Q1")), length(which(high_agriculture_table$Quarter == "Q2")),
+                      length(which(high_agriculture_table$Quarter == "Q3")), length(which(high_agriculture_table$Quarter == "Q4")))
+names(quarter_freq_agr) <- c("Q1", "Q2", "Q3", "Q4")
+quarter_freq_agr
+
+
+high_industry <- which(data$`%industry` > 0.32)
+high_industry_table <- data[high_industry,c(1,10)]
+high_industry_table[,"USD/TL" := data$`USD/TL`[high_industry]]
+high_industry_table[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+high_industry_table[,Date := NULL]
+high_industry_table
+quarter_freq_ind <- c(length(which(high_industry_table$Quarter == "Q1")), length(which(high_industry_table$Quarter == "Q2")),
+                      length(which(high_industry_table$Quarter == "Q3")), length(which(high_industry_table$Quarter == "Q4")))
+names(quarter_freq_ind) <- c("Q1", "Q2", "Q3", "Q4")
+quarter_freq_ind
+
+high_manufacturing <- which(data$`%manufacturing` > 0.28)
+high_manufacturing_table <- data[high_manufacturing,c(1,11)]
+high_manufacturing_table[,"USD/TL" := data$`USD/TL`[high_manufacturing]]
+high_manufacturing_table[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+high_manufacturing_table[,Date := NULL]
+high_manufacturing_table
+quarter_freq_man <- c(length(which(high_manufacturing_table$Quarter == "Q1")), length(which(high_manufacturing_table$Quarter == "Q2")),
+                      length(which(high_manufacturing_table$Quarter == "Q3")), length(which(high_manufacturing_table$Quarter == "Q4")))
+names(quarter_freq_man) <- c("Q1", "Q2", "Q3", "Q4")
+quarter_freq_man
+
+high_construction <- which(data$`%construction` > 0.1)
+high_construction_table <- data[high_construction,c(1,12)]
+high_construction_table[,"USD/TL" := data$`USD/TL`[high_construction]]
+high_construction_table[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+high_construction_table[,Date := NULL]
+high_construction_table
+quarter_freq_con <- c(length(which(high_construction_table$Quarter == "Q1")), length(which(high_construction_table$Quarter == "Q2")),
+                      length(which(high_construction_table$Quarter == "Q3")), length(which(high_construction_table$Quarter == "Q4")))
+names(quarter_freq_con) <- c("Q1", "Q2", "Q3", "Q4")
+quarter_freq_con
+
+high_services <- which(data$`%service` > 0.3)
+high_services_table <- data[high_services,c(1,12)]
+high_services_table[,"USD/TL" := data$`USD/TL`[high_services]]
+high_services_table[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+high_services_table[,Date := NULL]
+high_services_table  
+quarter_freq_ser <- c(length(which(high_services_table$Quarter == "Q1")), length(which(high_services_table$Quarter == "Q2")),
+                      length(which(high_services_table$Quarter == "Q3")), length(which(high_services_table$Quarter == "Q4")))
+names(quarter_freq_ser) <- c("Q1", "Q2", "Q3", "Q4")
+quarter_freq_ser
+
+data2 <- data
+data2[,c("Year", "Quarter") := tstrsplit(Date, '-')]
+data2[,Date := NULL]
+str(data2)
+
+#pivot table for quarters for vadilating seasonality
+data2[,list(quarter_avg_agr = mean(`%agriculture`, na.rm = TRUE)), by = list(Quarter)]
+data2[,list(quarter_avg_ind = mean(`%industry`, na.rm = TRUE)), by = list(Quarter)]
+data2[,list(quarter_avg_man = mean(`%manufacturing`, na.rm = TRUE)), by = list(Quarter)]
+data2[,list(quarter_avg_con = mean(`%construction`, na.rm = TRUE)), by = list(Quarter)]
+data2[,list(quarter_avg_ser = mean(`%service`, na.rm = TRUE)), by = list(Quarter)]
+
+end.rcode-->
+
+<p>Conclusion: According to the analyses carried, seasonality might have a significant effect on the GDP contributions of sectors. Highest percentages of agriculture in GDP is observed in the 3rd quarter which is pretty reasonable, whereas highest industry and manufacturing contributions are noticed at 1st quarter, in cold weather seasons. It seems like cold weather has a negative effect on the construction sector and seasonality has no specific effect on the sector of services.</p>
+
+<p>No significant effect of USD/TL ratio was detected to the contributions of sectors to the GDP. More advanced analysis is required to comment on this variable.</p>
+
+<p>About the general trends, it can be concluded that the agriculture sector fluctuates according to the seasns, industry sector follows a decreasing trend, manufacturing and construction sectors are stationary, and finally, services sector follows an increasing trend when their contributions to the GDP are compared.</p>
+
+<!--begin.rcode fig.width=7, fig.height=6
+
+end.rcode-->
+
+</body>
+</html>
