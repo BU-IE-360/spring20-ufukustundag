@@ -1,4 +1,4 @@
 # Progress Journal
 
 ##Project
-[Here](files/IE360_Project Report) is here.
+[Here] is (files/IE360_Project Report).
